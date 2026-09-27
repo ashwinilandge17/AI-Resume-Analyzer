@@ -1,0 +1,7 @@
+venv/
+__pycache__/
+*.pyc
+Ashwini.pdf
+temp_*.pdf
+history.json
+.DS_Store

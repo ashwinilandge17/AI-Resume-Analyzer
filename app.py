@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from resume_parser import extract_text_from_pdf
-from skill_matcher import extract_skills, compare_skills
+from skill_matcher import extract_skills, compare_skills, compare_dynamic_skills
 from jd_matcher import calculate_match_score
 from education_matcher import extract_education_score
 from contact_extractor import extract_contact_info
@@ -18,7 +18,6 @@ st.set_page_config(page_title="AI Resume Analyzer", page_icon="📄", layout="wi
 st.title("📄 AI Resume Analyzer")
 st.write("Upload one or more resumes and check their match with a job description!")
 
-# Feature 3: Multiple resume upload
 uploaded_files = st.file_uploader(
     "Upload Resume(s) (PDF)", type="pdf", accept_multiple_files=True
 )
@@ -42,6 +41,7 @@ if st.button("Analyze Resume(s)"):
 
             overall_match = calculate_match_score(resume_text, jd_text)
             skill_comparison = compare_skills(resume_skills, jd_skills)
+            dynamic_result = compare_dynamic_skills(resume_text, jd_text)
             edu_result = extract_education_score(resume_text)
             contact_info = extract_contact_info(resume_text)
             experience_years = extract_experience(resume_text)
@@ -87,19 +87,28 @@ if st.button("Analyze Resume(s)"):
                 st.subheader("🎓 Education Details")
                 st.write(f"**Remark:** {edu_result['education_remark']}")
 
-                # Feature 6: Chart
                 st.subheader("📈 Skill Match Chart")
-                fig, ax = plt.subplots()
                 counts = [len(skill_comparison["matched_skills"]), len(skill_comparison["missing_skills"])]
-                ax.pie(counts, labels=["Matched", "Missing"], autopct='%1.1f%%', colors=["#4CAF50", "#F44336"])
-                ax.axis("equal")
-                st.pyplot(fig)
+                if sum(counts) > 0:
+                    fig, ax = plt.subplots()
+                    ax.pie(counts, labels=["Matched", "Missing"], autopct='%1.1f%%', colors=["#4CAF50", "#F44336"])
+                    ax.axis("equal")
+                    st.pyplot(fig)
+                else:
+                    st.info("No specific skills were detected in the job description to compare.")
 
                 st.subheader("✅ Matched Skills")
                 st.success(", ".join(skill_comparison["matched_skills"]) or "None")
 
                 st.subheader("❌ Missing Skills")
                 st.error(", ".join(skill_comparison["missing_skills"]) or "None")
+
+                st.subheader("🧠 AI-Detected Keywords (Beyond Fixed List)")
+                st.write(f"**Dynamic Match:** {dynamic_result['dynamic_match_percentage']}%")
+                if dynamic_result['matched_keywords']:
+                    st.success("Matched: " + ", ".join(dynamic_result['matched_keywords'][:10]))
+                if dynamic_result['missing_keywords']:
+                    st.warning("Potentially Missing: " + ", ".join(dynamic_result['missing_keywords'][:10]))
 
                 st.subheader("💡 Improvement Suggestions")
                 for s in suggestions:
@@ -109,7 +118,6 @@ if st.button("Analyze Resume(s)"):
                 for issue in ats_result["issues"]:
                     st.write(f"- {issue}")
 
-                # Feature 1: PDF report download
                 pdf_bytes = generate_pdf_report(
                     uploaded_file.name, overall_match,
                     skill_comparison["skill_match_percentage"],
@@ -125,7 +133,6 @@ if st.button("Analyze Resume(s)"):
                     mime="application/pdf"
                 )
 
-        # Feature 3: Ranking table when multiple resumes uploaded
         if len(uploaded_files) > 1:
             st.subheader("🏆 Resume Ranking")
             df = pd.DataFrame(results_summary).sort_values("Final Score", ascending=False)
@@ -134,7 +141,6 @@ if st.button("Analyze Resume(s)"):
     else:
         st.warning("Please upload at least one resume and enter a job description!")
 
-# Feature 8: History section
 st.divider()
 st.subheader("🕒 Analysis History")
 history = load_history()

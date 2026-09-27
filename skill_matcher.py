@@ -97,3 +97,24 @@ if __name__ == "__main__":
     print("Found Skills:")
     for skill in skills_found:
         print(f"- {skill}")
+
+from role_skills_mapping import detect_role_and_get_skills
+
+
+def compare_skills_with_role_detection(resume_skills, jd_skills, jd_text):
+    """
+    First compares against explicit JD skills.
+    If no specific skill is found in the JD, detects the job role
+    from the JD text and uses that role's typical skill set instead.
+    """
+    if len(jd_skills) > 0:
+        final_jd_skills = jd_skills
+        detected_role = None
+    else:
+        detected_role, role_skills = detect_role_and_get_skills(jd_text)
+        final_jd_skills = role_skills
+
+    result = compare_skills(resume_skills, final_jd_skills)
+    result["detected_role"] = detected_role
+
+    return result

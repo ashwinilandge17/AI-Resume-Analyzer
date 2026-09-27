@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from resume_parser import extract_text_from_pdf
-from skill_matcher import extract_skills, compare_skills, compare_dynamic_skills
+from skill_matcher import extract_skills, compare_skills, compare_dynamic_skills, compare_skills_with_role_detection
 from jd_matcher import calculate_match_score
 from education_matcher import extract_education_score
 from contact_extractor import extract_contact_info
@@ -40,7 +40,7 @@ if st.button("Analyze Resume(s)"):
             jd_skills = extract_skills(jd_text)
 
             overall_match = calculate_match_score(resume_text, jd_text)
-            skill_comparison = compare_skills(resume_skills, jd_skills)
+            skill_comparison = compare_skills_with_role_detection(resume_skills, jd_skills, jd_text)
             dynamic_result = compare_dynamic_skills(resume_text, jd_text)
             edu_result = extract_education_score(resume_text)
             contact_info = extract_contact_info(resume_text)
@@ -96,6 +96,9 @@ if st.button("Analyze Resume(s)"):
                     st.pyplot(fig)
                 else:
                     st.info("No specific skills were detected in the job description to compare.")
+
+                if skill_comparison.get("detected_role"):
+                    st.info(f"Detected Job Role: {skill_comparison['detected_role'].title()} — showing typically required skills for this role")
 
                 st.subheader("✅ Matched Skills")
                 st.success(", ".join(skill_comparison["matched_skills"]) or "None")

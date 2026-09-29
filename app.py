@@ -23,6 +23,18 @@ uploaded_files = st.file_uploader(
 )
 jd_text = st.text_area("Paste Job Description Here", height=200)
 
+st.subheader("🎓 Education Criteria (Optional)")
+col_a, col_b = st.columns(2)
+with col_a:
+    education_filter_type = st.selectbox(
+        "Filter Type",
+        ["No Filter", "Minimum Required", "Maximum Allowed"]
+    )
+with col_b:
+    education_threshold = st.number_input(
+        "Threshold (%)", min_value=0, max_value=100, value=60
+    )
+
 if st.button("Analyze Resume(s)"):
     if uploaded_files and jd_text.strip() != "":
 
@@ -85,6 +97,21 @@ if st.button("Analyze Resume(s)"):
 
                 st.subheader("🎓 Education Details")
                 st.write(f"**Remark:** {edu_result['education_remark']}")
+
+                # Education criteria check
+                academic_score = edu_result['average_academic_score']
+                education_eligible = True
+
+                if education_filter_type == "Minimum Required":
+                    education_eligible = academic_score >= education_threshold
+                elif education_filter_type == "Maximum Allowed":
+                    education_eligible = academic_score <= education_threshold
+
+                if education_filter_type != "No Filter":
+                    if education_eligible:
+                        st.success(f"✅ Meets education criteria ({education_filter_type}: {education_threshold}%)")
+                    else:
+                        st.error(f"❌ Does not meet education criteria ({education_filter_type}: {education_threshold}%)")
 
                 st.subheader("📈 Skill Match Chart")
                 counts = [len(skill_comparison["matched_skills"]), len(skill_comparison["missing_skills"])]

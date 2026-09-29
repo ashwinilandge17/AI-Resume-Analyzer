@@ -1,5 +1,6 @@
 import spacy
 from skills_list import SKILLS_DB
+from role_skills_mapping import detect_role_and_get_skills
 
 nlp = spacy.load("en_core_web_sm")
 
@@ -42,65 +43,6 @@ def compare_skills(resume_skills, jd_skills):
     }
 
 
-def extract_dynamic_keywords(text):
-    """
-    Uses spaCy to extract important noun phrases (potential skills/keywords)
-    from text — without relying on any predefined list
-    """
-    doc = nlp(text.lower())
-    keywords = set()
-
-    for chunk in doc.noun_chunks:
-        phrase = chunk.text.strip()
-        if len(phrase) > 2 and not chunk.root.is_stop:
-            keywords.add(phrase)
-
-    return keywords
-
-
-def compare_dynamic_skills(resume_text, jd_text):
-    """
-    Extracts dynamic keywords from the JD and compares them
-    against the resume text (not dependent on the predefined SKILLS_DB list)
-    """
-    jd_keywords = extract_dynamic_keywords(jd_text)
-    resume_text_lower = resume_text.lower()
-
-    matched = set()
-    missing = set()
-
-    for keyword in jd_keywords:
-        if keyword in resume_text_lower:
-            matched.add(keyword)
-        else:
-            missing.add(keyword)
-
-    if len(jd_keywords) > 0:
-        match_percentage = round((len(matched) / len(jd_keywords)) * 100, 2)
-    else:
-        match_percentage = 0
-
-    return {
-        "matched_keywords": list(matched),
-        "missing_keywords": list(missing),
-        "dynamic_match_percentage": match_percentage
-    }
-
-
-# Testing
-if __name__ == "__main__":
-    from resume_parser import extract_text_from_pdf
-
-    resume_text = extract_text_from_pdf("Ashwini.pdf")
-    skills_found = extract_skills(resume_text)
-
-    print("Found Skills:")
-    for skill in skills_found:
-        print(f"- {skill}")
-
-from role_skills_mapping import detect_role_and_get_skills
-
-
 def compare_skills_with_role_detection(resume_skills, jd_skills, jd_text):
     """
     First compares against explicit JD skills.
@@ -120,4 +62,13 @@ def compare_skills_with_role_detection(resume_skills, jd_skills, jd_text):
     return result
 
 
-def compare_skills_with_role_detection(resume_skills, jd_skills, jd_text):
+# Testing
+if __name__ == "__main__":
+    from resume_parser import extract_text_from_pdf
+
+    resume_text = extract_text_from_pdf("Ashwini.pdf")
+    skills_found = extract_skills(resume_text)
+
+    print("Found Skills:")
+    for skill in skills_found:
+        print(f"- {skill}")

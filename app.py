@@ -12,6 +12,8 @@ from ats_checker import check_ats_friendliness
 from suggestions import generate_suggestions
 from history_manager import save_to_history, load_history
 from report_generator import generate_pdf_report
+from resume_structure_checker import check_resume_structure
+from grammar_checker import check_spelling
 
 st.set_page_config(page_title="AI Resume Analyzer", page_icon="📄", layout="wide")
 
@@ -58,6 +60,8 @@ if st.button("Analyze Resume(s)"):
             experience_years = extract_experience(resume_text)
             ats_result = check_ats_friendliness(temp_path)
             suggestions = generate_suggestions(skill_comparison["missing_skills"])
+            structure_result = check_resume_structure(resume_text)
+            misspelled_words = check_spelling(resume_text)
 
             final_score = round(
                 (overall_match + skill_comparison["skill_match_percentage"] + edu_result["average_academic_score"]) / 3,
@@ -69,7 +73,8 @@ if st.button("Analyze Resume(s)"):
                 "Final Score": final_score,
                 "Skill Match %": skill_comparison["skill_match_percentage"],
                 "Academic %": edu_result["average_academic_score"],
-                "ATS Score": ats_result["ats_score"]
+                "ATS Score": ats_result["ats_score"],
+                "Structure Score": structure_result["structure_score"]
             })
 
             save_to_history(
@@ -98,7 +103,6 @@ if st.button("Analyze Resume(s)"):
                 st.subheader("🎓 Education Details")
                 st.write(f"**Remark:** {edu_result['education_remark']}")
 
-                # Education criteria check
                 academic_score = edu_result['average_academic_score']
                 education_eligible = True
 
@@ -132,6 +136,18 @@ if st.button("Analyze Resume(s)"):
                 st.subheader("❌ Missing Skills")
                 st.error(", ".join(skill_comparison["missing_skills"]) or "None")
 
+                st.subheader("📋 Resume Structure Check (Compared to Ideal Format)")
+                st.write(f"**Structure Score:** {structure_result['structure_score']}%")
+                for section, present in structure_result['section_status'].items():
+                    icon = "✅" if present else "❌"
+                    st.write(f"{icon} {section.title()} section {'found' if present else 'not found'}")
+
+                st.subheader("✍️ Spelling Check")
+                if misspelled_words:
+                    st.warning("Potentially misspelled words: " + ", ".join(misspelled_words))
+                else:
+                    st.success("No spelling issues detected!")
+
                 st.subheader("💡 Improvement Suggestions")
                 for s in suggestions:
                     st.write(f"- {s}")
@@ -158,7 +174,7 @@ if st.button("Analyze Resume(s)"):
         if len(uploaded_files) > 1:
             st.subheader("🏆 Resume Ranking")
             df = pd.DataFrame(results_summary).sort_values("Final Score", ascending=False)
-            st.dataframe(df, use_container_width=True)
+            st.dataframe(df, width='stretch')
 
     else:
         st.warning("Please upload at least one resume and enter a job description!")
@@ -167,6 +183,6 @@ st.divider()
 st.subheader("🕒 Analysis History")
 history = load_history()
 if history:
-    st.dataframe(pd.DataFrame(history), use_container_width=True)
+    st.dataframe(pd.DataFrame(history), width='stretch')
 else:
     st.write("No history yet.")

@@ -118,3 +118,6 @@ def compare_skills_with_role_detection(resume_skills, jd_skills, jd_text):
     result["detected_role"] = detected_role
 
     return result
+
+
+def compare_skills_with_role_detection(resume_skills, jd_skills, jd_text):

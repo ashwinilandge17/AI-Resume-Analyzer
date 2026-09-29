@@ -45,18 +45,16 @@ def compare_skills(resume_skills, jd_skills):
 
 def compare_skills_with_role_detection(resume_skills, jd_skills, jd_text):
     """
-    First compares against explicit JD skills.
-    If no specific skill is found in the JD, detects the job role
-    from the JD text and uses that role's typical skill set instead.
+    Combines explicit skills found in the JD with the typical skill set
+    of any job role detected in the JD text, then compares against
+    the resume's skills.
     """
-    if len(jd_skills) > 0:
-        final_jd_skills = jd_skills
-        detected_role = None
-    else:
-        detected_role, role_skills = detect_role_and_get_skills(jd_text)
-        final_jd_skills = role_skills
+    detected_role, role_skills = detect_role_and_get_skills(jd_text)
 
-    result = compare_skills(resume_skills, final_jd_skills)
+    # Combine explicit JD skills with role-based skills (no duplicates)
+    combined_jd_skills = list(set(jd_skills) | set(role_skills))
+
+    result = compare_skills(resume_skills, combined_jd_skills)
     result["detected_role"] = detected_role
 
     return result

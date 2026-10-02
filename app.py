@@ -139,10 +139,12 @@ if st.button("Analyze Resume(s)"):
                 st.subheader("📈 Skill Match Chart")
                 counts = [len(skill_comparison["matched_skills"]), len(skill_comparison["missing_skills"])]
                 if sum(counts) > 0:
-                    fig, ax = plt.subplots()
+                    fig, ax = plt.subplots(figsize=(3, 3))
                     ax.pie(counts, labels=["Matched", "Missing"], autopct='%1.1f%%', colors=["#4CAF50", "#F44336"])
                     ax.axis("equal")
-                    st.pyplot(fig)
+                    col_chart, _ = st.columns([1, 2])
+                    with col_chart:
+                        st.pyplot(fig)
                 else:
                     st.info("No specific skills were detected in the job description to compare.")
 

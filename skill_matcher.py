@@ -1,8 +1,5 @@
-import spacy
 from skills_list import SKILLS_DB
 from role_skills_mapping import detect_role_and_get_skills
-
-nlp = spacy.load("en_core_web_sm")
 
 
 def extract_skills(resume_text):

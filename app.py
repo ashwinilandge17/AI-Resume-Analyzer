@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from resume_parser import extract_text_from_pdf
 from skill_matcher import extract_skills, compare_skills, compare_skills_with_role_detection
 from jd_matcher import calculate_match_score
-from education_matcher import extract_education_score
+from education_matcher import extract_education_score, extract_detailed_education
 from contact_extractor import extract_contact_info
 from experience_extractor import extract_experience
 from ats_checker import check_ats_friendliness
@@ -25,14 +25,21 @@ uploaded_files = st.file_uploader(
 )
 jd_text = st.text_area("Paste Job Description Here", height=200)
 
-st.subheader("🎓 Education Criteria (Optional)")
-col_a, col_b = st.columns(2)
+st.subheader("🎓 Education Filter")
+st.caption("Leave as 'No Filter' if you don't want to apply any education criteria.")
+
+col_a, col_b, col_c = st.columns(3)
 with col_a:
+    education_level = st.selectbox(
+        "Education Level to Check",
+        ["Overall Average", "10th", "12th", "Degree"]
+    )
+with col_b:
     education_filter_type = st.selectbox(
         "Filter Type",
         ["No Filter", "Minimum Required", "Maximum Allowed"]
     )
-with col_b:
+with col_c:
     education_threshold = st.number_input(
         "Threshold (%)", min_value=0, max_value=100, value=60
     )
@@ -56,6 +63,7 @@ if st.button("Analyze Resume(s)"):
             overall_match = calculate_match_score(resume_text, jd_text)
             skill_comparison = compare_skills_with_role_detection(resume_skills, jd_skills, jd_text)
             edu_result = extract_education_score(resume_text)
+            detailed_edu = extract_detailed_education(resume_text)
             contact_info = extract_contact_info(resume_text)
             experience_years = extract_experience(resume_text)
             ats_result = check_ats_friendliness(temp_path)
@@ -101,21 +109,32 @@ if st.button("Analyze Resume(s)"):
                 st.write(f"**Experience Detected:** {experience_years} years")
 
                 st.subheader("🎓 Education Details")
-                st.write(f"**Remark:** {edu_result['education_remark']}")
+                st.write(f"**10th:** {detailed_edu['tenth']['score']}% — {detailed_edu['tenth']['remark']}")
+                st.write(f"**12th:** {detailed_edu['twelfth']['score']}% — {detailed_edu['twelfth']['remark']}")
+                st.write(f"**Degree:** {detailed_edu['degree']['score']}% (equivalent) — {detailed_edu['degree']['remark']}")
+                st.write(f"**Overall Average:** {edu_result['average_academic_score']}% — {edu_result['education_remark']}")
 
-                academic_score = edu_result['average_academic_score']
-                education_eligible = True
-
-                if education_filter_type == "Minimum Required":
-                    education_eligible = academic_score >= education_threshold
-                elif education_filter_type == "Maximum Allowed":
-                    education_eligible = academic_score <= education_threshold
+                level_map = {
+                    "10th": detailed_edu["tenth"]["score"],
+                    "12th": detailed_edu["twelfth"]["score"],
+                    "Degree": detailed_edu["degree"]["score"],
+                    "Overall Average": edu_result["average_academic_score"]
+                }
+                selected_score = level_map.get(education_level)
 
                 if education_filter_type != "No Filter":
-                    if education_eligible:
-                        st.success(f"✅ Meets education criteria ({education_filter_type}: {education_threshold}%)")
+                    if selected_score is None:
+                        st.warning(f"⚠️ {education_level} score not found in resume — cannot apply filter.")
                     else:
-                        st.error(f"❌ Does not meet education criteria ({education_filter_type}: {education_threshold}%)")
+                        if education_filter_type == "Minimum Required":
+                            eligible = selected_score >= education_threshold
+                        else:
+                            eligible = selected_score <= education_threshold
+
+                        if eligible:
+                            st.success(f"✅ Meets criteria on {education_level} ({education_filter_type}: {education_threshold}%)")
+                        else:
+                            st.error(f"❌ Does not meet criteria on {education_level} ({education_filter_type}: {education_threshold}%)")
 
                 st.subheader("📈 Skill Match Chart")
                 counts = [len(skill_comparison["matched_skills"]), len(skill_comparison["missing_skills"])]
@@ -145,6 +164,7 @@ if st.button("Analyze Resume(s)"):
                 st.subheader("✍️ Spelling Check")
                 if misspelled_words:
                     st.warning("Potentially misspelled words: " + ", ".join(misspelled_words))
+                    st.caption("Note: Names, places, and company names are often flagged as 'unknown' even when spelled correctly — this is a normal limitation of dictionary-based spell checkers.")
                 else:
                     st.success("No spelling issues detected!")
 
